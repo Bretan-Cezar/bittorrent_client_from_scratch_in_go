@@ -9,5 +9,7 @@ func main() {
 
 	service := service.NewTorrentService(os.Args[1])
 
-	service.Handshakes()
+	service.EstablishHandshakes()
+
+	service.CloseConnections()
 }

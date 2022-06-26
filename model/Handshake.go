@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -43,7 +44,39 @@ func (hs *Handshake) Serialize() []byte {
 	return buf
 }
 
-func Read(r io.Reader) (*Handshake, error) {
+func ReadHandshake(r io.Reader) (*Handshake, error) {
 
-	return nil, nil
+	hexLength := make([]byte, 1)
+
+	_, err := io.ReadFull(r, hexLength)
+	if err != nil {
+		return nil, err
+	}
+
+	protocolLength := int(hexLength[0])
+
+	if protocolLength == 0 {
+		err := fmt.Errorf("protocolLength cannot be 0")
+		return nil, err
+	}
+
+	handshakeBuf := make([]byte, protocolLength+8+20+20)
+
+	_, err = io.ReadFull(r, handshakeBuf)
+	if err != nil {
+		return nil, err
+	}
+
+	var infoHash, peerID [20]byte
+
+	copy(infoHash[:], handshakeBuf[protocolLength+8:protocolLength+8+20])
+	copy(peerID[:], handshakeBuf[protocolLength+8+20:])
+
+	hs := Handshake{
+		Pstr:     string(handshakeBuf[0:protocolLength]),
+		InfoHash: infoHash,
+		PeerID:   peerID,
+	}
+
+	return &hs, nil
 }

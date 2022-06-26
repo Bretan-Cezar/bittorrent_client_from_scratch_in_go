@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"example/bittorrent_in_go/model"
 	"fmt"
 	"net"
@@ -8,8 +9,9 @@ import (
 )
 
 type TorrentService struct {
-	PeerID  [20]byte
-	Torrent *model.TorrentFile
+	PeerID      [20]byte
+	Torrent     *model.TorrentFile
+	Connections []net.Conn
 }
 
 func NewTorrentService(filePath string) (service *TorrentService) {
@@ -38,7 +40,32 @@ func connectToPeer(peer model.Peer, c chan net.Conn) {
 	c <- conn
 }
 
-func (service *TorrentService) Handshakes() {
+func (service *TorrentService) completeHandshake(conn net.Conn) (*model.Handshake, error) {
+
+	conn.SetDeadline(time.Now().Add(3 * time.Second))
+	defer conn.SetDeadline(time.Time{}) // Disable the deadline
+
+	request := model.NewHandshake(service.Torrent.InfoHash, service.PeerID)
+
+	_, err := conn.Write(request.Serialize())
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := model.ReadHandshake(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	if !bytes.Equal(response.InfoHash[:], service.Torrent.InfoHash[:]) {
+
+		return nil, fmt.Errorf("expected infohash %x but got %x", response.InfoHash, service.Torrent.InfoHash)
+	}
+
+	return response, nil
+}
+
+func (service *TorrentService) EstablishHandshakes() {
 
 	peersList, err := service.Torrent.RequestPeers(service.PeerID, 54788)
 
@@ -58,12 +85,28 @@ func (service *TorrentService) Handshakes() {
 	for index := 0; index < len(peersList); index++ {
 
 		conn := <-conn_ch
-		fmt.Println(conn)
 
 		if conn == nil {
 
 			continue
 		}
+
+		resp, err := service.completeHandshake(conn)
+
+		if err != nil {
+
+			continue
+		}
+
+		fmt.Printf("%v ; %p\n", conn, resp)
+
+		service.Connections = append(service.Connections, conn)
+	}
+}
+
+func (service *TorrentService) CloseConnections() {
+
+	for _, conn := range service.Connections {
 
 		conn.Close()
 	}
