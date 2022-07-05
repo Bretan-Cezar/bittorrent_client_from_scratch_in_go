@@ -48,20 +48,22 @@ func ReadHandshake(r io.Reader) (*Handshake, error) {
 
 	hexLength := make([]byte, 1)
 
+	// Reading the protocol ID
 	_, err := io.ReadFull(r, hexLength)
 	if err != nil {
 		return nil, err
 	}
 
 	protocolLength := int(hexLength[0])
-
 	if protocolLength == 0 {
-		err := fmt.Errorf("protocolLength cannot be 0")
-		return nil, err
+
+		return nil, fmt.Errorf("protocolLength cannot be 0")
 	}
 
+	// Allocating buffer for protocol name, 8 reserved bytes, infohash and peer ID
 	handshakeBuf := make([]byte, protocolLength+8+20+20)
 
+	// Reading the next L+8+20+20 bytes
 	_, err = io.ReadFull(r, handshakeBuf)
 	if err != nil {
 		return nil, err
