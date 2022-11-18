@@ -33,7 +33,7 @@ func createPeersFromBinary(peersBinary []byte) ([]Peer, error) {
 	return peers, nil
 }
 
-func (p Peer) ToString() string {
+func (p Peer) String() string {
 
 	return net.JoinHostPort(p.IP.String(), strconv.Itoa(int(p.Port)))
 }

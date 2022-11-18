@@ -228,7 +228,7 @@ func readTorrent(path string) (torrent *bencodeTorrent, err error) {
 
 	encodedInfo := torrentString[infoStartIndex : len(torrentString)-1]
 
-	array := decode(string(torrentString))
+	array := decode(torrentString)
 
 	torrent = createObjects(array)
 

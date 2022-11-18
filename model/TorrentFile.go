@@ -39,11 +39,11 @@ func MakeTorrentFile(path string) (torrent *TorrentFile) {
 
 	for p != "" {
 
-		var new_hash [20]byte
+		var newHash [20]byte
 
-		copy(new_hash[:], p[:20])
+		copy(newHash[:], p[:20])
 
-		torrent.PieceHashes = append(torrent.PieceHashes, new_hash)
+		torrent.PieceHashes = append(torrent.PieceHashes, newHash)
 
 		p = p[20:]
 	}

@@ -18,7 +18,7 @@ type Client struct {
 
 func connectToPeer(peer Peer) (net.Conn, error) {
 
-	return net.DialTimeout("tcp", peer.ToString(), 3*time.Second)
+	return net.DialTimeout("tcp", peer.String(), 3*time.Second)
 }
 
 func completeHandshake(conn net.Conn, infoHash [20]byte, peerID [20]byte) (*Handshake, error) {

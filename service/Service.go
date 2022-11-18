@@ -12,7 +12,7 @@ import (
 )
 
 // MaxBlockSize is the largest number of bytes a request can ask for
-const MaxBlockSize = 65536
+const MaxBlockSize = 16384
 
 // MaxBacklog is the number of unfulfilled requests a client can have in its pipeline
 const MaxBacklog = 5
@@ -68,23 +68,23 @@ func (service *TorrentService) CreateClients() {
 		return
 	}
 
-	clients_ch := make(chan *model.Client)
+	clientsCh := make(chan *model.Client)
 
 	for _, peer := range peersList {
 
-		go model.NewClient(peer, service.Torrent.InfoHash, service.PeerID, clients_ch)
+		go model.NewClient(peer, service.Torrent.InfoHash, service.PeerID, clientsCh)
 	}
 
 	for index := 0; index < len(peersList); index++ {
 
-		client := <-clients_ch
+		client := <-clientsCh
 
 		if client == nil {
 
 			continue
 		}
 
-		fmt.Printf("Successfully connected to %s.\n", client.Peer.ToString())
+		fmt.Printf("Successfully connected to %s.\n", client.Peer.String())
 
 		service.Clients = append(service.Clients, client)
 	}
@@ -122,7 +122,7 @@ func (state *pieceProgress) readMessage() error {
 		if err != nil {
 			return err
 		}
-		state.client.Bitfield.HasPiece(index)
+		state.client.Bitfield.MarkPiece(index)
 
 	case model.MsgPiece:
 		n, err := msg.ParsePieceMessage(state.index, state.buf)
